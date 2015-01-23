@@ -75,9 +75,6 @@ public class LogFactory {
         if(USE_JDK_LOGGER)
             return new JDKLogImpl(clazz);
 
-        if(IS_LOG4J2_AVAILABLE)
-            return new Log4J2LogImpl(clazz);
-
         if(IS_LOG4J_AVAILABLE)
             return new Log4JLogImpl(clazz);
 
@@ -90,9 +87,6 @@ public class LogFactory {
 
         if(USE_JDK_LOGGER)
             return new JDKLogImpl(category);
-
-        if(IS_LOG4J2_AVAILABLE)
-            return new Log4J2LogImpl(category);
 
         if(IS_LOG4J_AVAILABLE)
             return new Log4JLogImpl(category);
