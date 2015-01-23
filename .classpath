@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="tests/byteman"/>
+	<classpathentry kind="src" path="tests/junit"/>
+	<classpathentry kind="src" path="tests/junit-functional"/>
+	<classpathentry kind="src" path="tests/other"/>
+	<classpathentry kind="src" path="tests/perf"/>
+	<classpathentry kind="src" path="tests/stress"/>
+	<classpathentry kind="src" path="tests/util"/>
+	<classpathentry kind="src" path="conf"/>
+	<classpathentry kind="lib" path="lib/ant-junit.jar"/>
+	<classpathentry kind="lib" path="lib/ant-launcher.jar"/>
+	<classpathentry kind="lib" path="lib/ant.jar"/>
+	<classpathentry kind="lib" path="lib/bnd.jar"/>
+	<classpathentry kind="lib" path="lib/bouncycastle.jar"/>
+	<classpathentry kind="lib" path="lib/bsh.jar"/>
+	<classpathentry kind="lib" path="lib/byteman-bmunit.jar"/>
+	<classpathentry kind="lib" path="lib/byteman-install.jar"/>
+	<classpathentry kind="lib" path="lib/byteman-submit.jar"/>
+	<classpathentry kind="lib" path="lib/byteman.jar"/>
+	<classpathentry kind="lib" path="lib/log4j.jar"/>
+	<classpathentry kind="lib" path="lib/serializer.jar"/>
+	<classpathentry kind="lib" path="lib/testng-6.8.jar"/>
+	<classpathentry kind="lib" path="lib/xalan.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
+	<classpathentry kind="output" path="classes"/>
+</classpath>
