@@ -8,9 +8,11 @@ import org.jgroups.conf.ClassConfigurator;
 import org.jgroups.logging.Log;
 import org.jgroups.logging.LogFactory;
 import org.jgroups.protocols.CENTRAL_EXECUTOR;
+import org.jgroups.protocols.Executing.ConsumerRemovedException;
 import org.jgroups.protocols.Executing.Owner;
 import org.jgroups.stack.ProtocolStack;
 import org.jgroups.tests.ChannelTestBase;
+import org.jgroups.util.FutureListener;
 import org.jgroups.util.NotifyingFuture;
 import org.jgroups.util.Streamable;
 import org.jgroups.util.Util;
@@ -20,12 +22,15 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.NotSerializableException;
+import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
@@ -677,4 +682,78 @@ public class ExecutingServiceTest extends ChannelTestBase {
         consumer1.join(2000);
         assert !consumer1.isAlive() : "Consumer did not stop correctly";
     }
+    
+    @Test
+    public void testResubmitionOfWorkAfterConsumerLeaves() throws InterruptedException {
+      Thread consumer3 = new Thread(er3);
+      consumer3.start();
+
+      final AtomicInteger invocationCount = new AtomicInteger();
+      final AtomicBoolean taskException = new AtomicBoolean();
+
+      // Submit a task that waits
+      NotifyingFuture<Void> future = e1.submit(new WaitingTask());
+      future.setListener(new FutureListener<Void>() {
+        @Override
+        public void futureDone(Future<Void> future) {
+          try {
+            future.get();
+            invocationCount.incrementAndGet();
+          } catch (Exception e) {
+            if (!(e.getCause() instanceof ConsumerRemovedException)) {
+              taskException.set(true);
+            }
+          }
+        }
+      });
+
+      Thread.sleep(100);
+
+      assert invocationCount.get() == 0 : "Invocation count before closing";
+      assert !taskException.get() : "Task exception before closing";
+
+      c.close();
+
+      assert invocationCount.get() == 0 : "Invocation count after closing";
+      assert !taskException.get() : "Task exception after closing";
+
+      er3.getCurrentRunningTasks().keySet().iterator().next().interrupt();
+
+      Thread.sleep(100);
+
+      assert invocationCount.get() == 0 : "Invocation count after interrupt";
+      assert !taskException.get() : "Task exception after interrupt";
+
+      Thread consumer2 = new Thread(er2);
+      consumer2.start();
+
+      Thread.sleep(100);
+
+      er2.getCurrentRunningTasks().keySet().iterator().next().interrupt();
+
+      Thread.sleep(100);
+
+      assert invocationCount.get() == 0 : "Invocation was repeated";
+      assert !taskException.get() : "Task exception after new consumer";
+    }
+
+
+    /**
+     * Callable that just waits until interrupted.
+     */
+    public static class WaitingTask implements Callable<Void>, Serializable {
+      @Override
+      public Void call() {
+        while(!Thread.interrupted()) {
+          try {
+            synchronized (this) {
+              wait();
+            }
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          }
+        }
+        return null;
+      }
+    };
 }

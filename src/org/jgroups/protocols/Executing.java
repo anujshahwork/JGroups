@@ -572,6 +572,7 @@ abstract public class Executing extends Protocol {
             }
             
             synchronized (_awaitingReturn) {
+                Set<Owner> ownersToRemove = new HashSet<Owner>();
                 for (Entry<Owner, Runnable> entry : _awaitingReturn.entrySet()) {
                     // The person currently servicing our request has gone down
                     // without completing so we have to keep our request alive by
@@ -579,13 +580,15 @@ abstract public class Executing extends Protocol {
                     Owner owner = entry.getKey();
                     if (!members.contains(owner.getAddress())) {
                         Runnable runnable = entry.getValue();
-                        // We need to register the request id before sending the request back to the coordinator
-                        // in case if our task gets picked up since another was removed
-                        _requestId.put(runnable, owner.getRequestId());
-                        _awaitingConsumer.add(runnable);
-                        sendToCoordinator(Type.RUN_REQUEST, owner.getRequestId(), 
-                                local_addr);
+                        ownersToRemove.add(entry.getKey());
+                        ExecutorNotification notificiation = notifiers.remove(runnable);
+                        if (notificiation != null) {
+                            notificiation.throwableEncountered(new ConsumerRemovedException());
+                        }
                     }
+                }
+                for (Owner ownerToRemove : ownersToRemove) {
+                    _awaitingReturn.remove(ownerToRemove);
                 }
             }
         }
@@ -1095,5 +1098,14 @@ abstract public class Executing extends Protocol {
         public String toString() {
             return address + "::" + requestId;
         }
+    }
+
+    /**
+     * The consumer executing a task has been removed from the view. The task may or may not have completed.
+     *
+     * @author Copyright (c) CHP Consulting Ltd. 2015
+     */
+    public static class ConsumerRemovedException extends RuntimeException {
+
     }
 }
